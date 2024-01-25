@@ -113,6 +113,26 @@ Painter::drawGCell(QPainter* painter, const GCell& gCell, QColor rectColor, QCol
 }
 
 void
+Painter::highlightPath(const std::vector<Point>& path)
+{
+	for(auto& n : path)
+	{
+		// printf("Set Path : (%d, %d)\n", n.x, n.y);
+		gCellInsts_[n.x][n.y].setPath();
+	}
+}
+
+void
+Painter::highlightBlock(const std::vector<Point>& block)
+{
+	for(auto& n : block)
+	{
+		 printf("Set Block : (%d, %d)\n", n.x, n.y);
+		gCellInsts_[n.x][n.y].setBlock();
+	}
+}
+
+void
 Painter::paintEvent(QPaintEvent* event)
 {
   QPainter painter(this);
@@ -132,8 +152,18 @@ Painter::paintEvent(QPaintEvent* event)
         drawGCell( &painter, gCellInsts_[i][j], Qt::red, Qt::black, 4);
       else if(i == grid_->xT() && j == grid_->yT())
         drawGCell( &painter, gCellInsts_[i][j], Qt::red, Qt::black, 4);
-      else
-        drawGCell( &painter, gCellInsts_[i][j], Qt::white, Qt::black, 4);
+      else 
+			{
+				if(gCellInsts_[i][j].path())
+					drawGCell( &painter, gCellInsts_[i][j], Qt::darkRed, Qt::black, 4);
+				else if(gCellInsts_[i][j].block())
+				{
+					drawGCell( &painter, gCellInsts_[i][j], Qt::darkGray, Qt::black, 4);
+					printf("Block %d %d\n", i, j);
+				}
+				else
+					drawGCell( &painter, gCellInsts_[i][j], Qt::white, Qt::black, 4);
+			}
     }
   }
 }

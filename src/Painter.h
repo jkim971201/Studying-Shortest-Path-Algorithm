@@ -21,13 +21,18 @@ class GCell
 		GCell() {}
 
     GCell(int lx, int ly, int w, int h)
-      : lx_ (lx),
-        ly_ (ly),
-        w_  ( w),
-        h_  ( h)
+      : lx_   (lx),
+        ly_   (ly),
+        w_    ( w),
+        h_    ( h),
+				path_ (false),
+				block_ (false)
     {
 			rect_ = QRectF(lx, ly, w, h); 
 		}
+
+		void setPath()  { path_  = true; }
+		void setBlock() { block_ = true; }
 
     // Getters
     const QRectF* rect() const { return &rect_; }
@@ -36,6 +41,8 @@ class GCell
 		int ly() const { return lx_;    }
 		int  w() const { return w_;     }
 		int  h() const { return h_;     }
+		bool path() const { return path_; }
+		bool block() const { return block_; }
 
   private:
 
@@ -43,6 +50,9 @@ class GCell
 		int ly_;
 		int w_;
 		int h_;
+
+		bool path_;
+		bool block_;
 
     QRectF rect_;
 };
@@ -58,6 +68,8 @@ class Painter : public QWidget
 
     // APIs
     void openWindow();
+		void highlightPath(const std::vector<Point>& path);
+		void highlightBlock(const std::vector<Point>& blcok);
 
     // Setters
     void setRectFillColor(QColor color) { rectFillColor_ = color; }
@@ -76,8 +88,6 @@ class Painter : public QWidget
     QColor rectLineColor_;
 
     Grid* grid_;
-
-    std::vector<std::vector<GCell>> gCells_;
 
     void drawLine (QPainter* painter, QPointF p1, QPointF p2, QColor lineColor = Qt::black, int thickness = 1);
     void drawRect (QPainter* painter, const QRectF& rect, QColor rectColor = Qt::white, QColor rectLineColor = Qt::black, int thickness = 1);
