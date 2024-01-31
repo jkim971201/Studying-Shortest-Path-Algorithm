@@ -113,7 +113,7 @@ Painter::drawGCell(QPainter* painter, const GCell& gCell, QColor rectColor, QCol
 }
 
 void
-Painter::highlightPath(const std::vector<Point>& path)
+Painter::setPath(const std::vector<Point>& path)
 {
 	for(auto& n : path)
 	{
@@ -123,13 +123,29 @@ Painter::highlightPath(const std::vector<Point>& path)
 }
 
 void
-Painter::highlightBlock(const std::vector<Point>& block)
+Painter::setBlock(const std::vector<Point>& block)
 {
 	for(auto& n : block)
 	{
-		 printf("Set Block : (%d, %d)\n", n.x, n.y);
+		// printf("Set Block : (%d, %d)\n", n.x, n.y);
 		gCellInsts_[n.x][n.y].setBlock();
 	}
+}
+
+void
+Painter::setSink(const std::vector<Point>& sink)
+{
+	for(auto& n : sink)
+	{
+		// printf("Set Sink : (%d, %d)\n", n.x, n.y);
+		gCellInsts_[n.x][n.y].setSink();
+	}
+}
+
+void
+Painter::setSource(const Point& src)
+{
+	gCellInsts_[src.x][src.y].setSource();
 }
 
 void
@@ -148,22 +164,16 @@ Painter::paintEvent(QPaintEvent* event)
   {
     for(int j = 0; j < numGCellY_; j++)
     {
-      if(i == grid_->xS() && j == grid_->yS())
+      if( gCellInsts_[i][j].isSource() )
+        drawGCell( &painter, gCellInsts_[i][j], Qt::blue, Qt::black, 4);
+			else if( gCellInsts_[i][j].isSink() )
         drawGCell( &painter, gCellInsts_[i][j], Qt::red, Qt::black, 4);
-      else if(i == grid_->xT() && j == grid_->yT())
-        drawGCell( &painter, gCellInsts_[i][j], Qt::red, Qt::black, 4);
+      else if( gCellInsts_[i][j].isPath() )
+        drawGCell( &painter, gCellInsts_[i][j], Qt::darkRed, Qt::black, 4);
+      else if( gCellInsts_[i][j].isBlock() )
+        drawGCell( &painter, gCellInsts_[i][j], Qt::darkGray, Qt::black, 4);
       else 
-			{
-				if(gCellInsts_[i][j].path())
-					drawGCell( &painter, gCellInsts_[i][j], Qt::darkRed, Qt::black, 4);
-				else if(gCellInsts_[i][j].block())
-				{
-					drawGCell( &painter, gCellInsts_[i][j], Qt::darkGray, Qt::black, 4);
-					printf("Block %d %d\n", i, j);
-				}
-				else
-					drawGCell( &painter, gCellInsts_[i][j], Qt::white, Qt::black, 4);
-			}
+				drawGCell( &painter, gCellInsts_[i][j], Qt::white, Qt::black, 4);
     }
   }
 }

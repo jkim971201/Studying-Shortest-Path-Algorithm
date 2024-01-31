@@ -11,178 +11,173 @@
 
 using namespace gui;
 
-
-
-class AStar
+class Dijkstra 
 {
   public:
 
-    AStar(const Grid* grid)
+    Dijkstra(const Grid* grid)
       : grid_ (grid)
     {
-			w_  = grid_->width();
-			h_  = grid_->height();
-			xS_ = grid_->xS();
-			xT_ = grid_->xT();
-			yS_ = grid_->yS();
-			yT_ = grid_->yT();
-		}
+      w_ = grid_->width();
+      h_ = grid_->height();
+    }
 
-		std::vector<Point> run();
+    std::vector<Point> run();
 
   private:
 
-
-		int w_;
-		int h_;
-
-		int xS_;
-		int yS_;
-		int xT_;
-		int yT_;
+    int w_;
+    int h_;
 
     const Grid* grid_;
+
+    int  loc2id(int x, int y) const { return x + w_ * y; }
+    void id2loc(int v, int& x, int& y) const 
+    { 
+      x = v % w_;
+      y = v / w_;
+    }
+
+    const std::vector<int> getNeighbors(int v_id, const std::vector<bool>& closeSet) const
+    {
+      std::vector<int> neighbors;
+      
+      int x, y;
+      id2loc(v_id, x, y);
+
+      if(x < w_ - 1) 
+      {
+        int newID = this->loc2id(x + 1, y);
+        if( !closeSet[newID] && !grid_->isBlock(x + 1, y) )
+          neighbors.push_back( newID ); // Right
+      }
+      if(x > 0) 
+      {
+        int newID = this->loc2id(x - 1, y);
+        if( !closeSet[newID] && !grid_->isBlock(x - 1, y) )
+          neighbors.push_back( newID ); // Left
+      }
+      if(y < h_ - 1) 
+      {
+        int newID = this->loc2id(x, y + 1);
+        if( !closeSet[newID] && !grid_->isBlock(x, y + 1) )
+          neighbors.push_back( newID ); // Up
+      }
+      if(y > 0) 
+      {
+        int newID = this->loc2id(x, y - 1);
+        if( !closeSet[newID] && !grid_->isBlock(x, y - 1) )
+          neighbors.push_back( newID ); // Down
+      }
+
+      return neighbors;
+    }
 };
 
 std::vector<Point>
-AStar::run()
+Dijkstra::run()
 {
-	//int getID = [&] (int x, int y) { return x + y * w_; };
-	//std::function<int(const Point&)> getID = [&] (const Point& pt) { return pt.x + pt.y * w_; };
+  // #1. Dijkstra Initialization
+  int numGrid = w_ * h_;
 
-	int lx = 0;
-	int ly = 0;
-	int ux = w_ - 1;
-	int uy = h_ - 1;
-	int numPoint = w_ * h_;
+  std::vector<float> cost(numGrid, std::numeric_limits<float>::max());
+  std::vector<int>   prev(numGrid, -1);
+  std::vector<bool>  isExplored(numGrid, false);
 
-	int curX = xS_;
-	int curY = yS_;
+  int srcIdx  = loc2id(grid_->source().x, grid_->source().y);
 
-	printf("Start : (%d, %d)\n", xS_, yS_);
+	printf("srcIdx  : %d\n",  srcIdx);
 
-	std::vector<float> costG(numPoint, std::numeric_limits<float>::max());
-	std::vector<float> costF(numPoint, std::numeric_limits<float>::max());
-	std::map<int, int> cameFrom;
-
-	auto getID     = [&] (const Point& pt) { return pt.x + pt.y * w_; };
-	auto getIDbyXY = [&] (int x, int y) { return x + y * w_; };
-	auto cmp = [&] (const Point& a, const Point& b) {	return costF[getID(a)] < costF[getID(b)];	};
-
-
-	Point start( curX, curY );
-	float startH = grid_->getHeuristicCost(start);
-
-	costG[getID(start)] = 0.0;
-	costF[getID(start)] = startH;
-
-	std::set<Point, decltype(cmp)> openSet_(cmp);
-	std::set<int> closeSet_;
-
-	openSet_.insert( start );
-
-  auto ifExist = [&] (const Point& newPoint) 
+	std::set<int> setPin;
+	for(auto sink : grid_->sink())
 	{
-		for(auto& n : openSet_)
-		{
-			if(n.x == newPoint.x && n.y == newPoint.y) 
-				return true;
-		}
-		return false;
-	};
+		int sinkIdx = loc2id(sink.x, sink.y);
+		setPin.insert( sinkIdx );
+	}
 
-	int iter = 0;
-	int maxIter = 100;
-	while(!openSet_.empty() && iter < maxIter)
-	{
-		auto curPointItr = openSet_.begin();
-		const Point curPoint = *curPointItr; // must be a copy
-		int curPointID = getID( curPoint );
-		curX = curPoint.x;
-		curY = curPoint.y;
-		closeSet_.insert( curPointID );
+  cost[srcIdx] = 0;
+  
+  auto extractMin = [&] ()
+  {
+    int minIdx = -1;
+    float minCost = std::numeric_limits<float>::max();
+
+    for(int i = 0; i < numGrid; i++)
+    {
+			// printf("i : %d cost[i] : %f minCost: %f\n", i, cost[i], minCost);
+      if(cost[i] < minCost && isExplored[i] == false)
+      {
+        minIdx = i;
+        minCost = cost[i];
+      }
+    }
+
+    return minIdx;
+  };
+
+	auto checkPin = [&] (int v_id) {return setPin.count( v_id ) != 0;	};
+
+  // #2. Main Dijkstra Loop
+  int v_cur;
+	int x_cur, y_cur;
+	int iter    = 0;
+	int maxIter = 2000;
 	
-		printf("\n");
-		printf("Iter[%03d] Cur : (%02d, %02d)\n", iter, curX, curY);
+	std::set<int> visitedPin;
 
-		if(curPoint.x == xT_ && curPoint.y == yT_)
-		{
-			printf("Finish : cur (%02d, %02d) goal (%02d, %02d)\n", curPoint.x, curPoint.y, xT_, yT_);
-			break;
-		}
-		openSet_.erase( curPointItr );
-
-		Point newPoint;
-		for(int i = 0; i < 4; i++)
-		{
-			if( i == 0 )      // UP
+	int numPinToRoute = grid_->sink().size();
+	while(numPinToRoute != 0)
+	{
+    while( iter++ < maxIter )
+    {
+      v_cur = extractMin();
+  		id2loc(v_cur, x_cur, y_cur);
+      isExplored[v_cur] = true;
+  
+  		printf("Iter[%03d] Cur : (%02d, %02d)\n", iter, x_cur, y_cur);
+  
+			if( checkPin(v_cur) && visitedPin.count( v_cur ) == 0)
 			{
-				if(curY + 1 <= uy && closeSet_.count( getIDbyXY(curX, curY + 1) == 0)) 
-					newPoint = Point(curX, curY + 1);
-				else					     
-					continue;
-			}
-			else if( i == 1 ) // DOWN
-			{
-				if(curY - 1 >= ly && closeSet_.count( getIDbyXY(curX, curY - 1) == 0)) 
-					newPoint = Point(curX, curY - 1);
-				else					     
-					continue;
-			}
-			else if( i == 2 ) // RIGHT
-			{
-				if(curX + 1 <= ux && closeSet_.count( getIDbyXY(curX + 1, curY) == 0)) 
-					newPoint = Point(curX + 1, curY);
-				else					     
-					continue;
-			}
-			else              // LEFT
-			{
-				if(curX - 1 >= lx && closeSet_.count( getIDbyXY(curX - 1, curY) == 0))
-					newPoint = Point(curX - 1, curY);
-				else					     
-					continue;
+				visitedPin.insert( v_cur );
+				printf(" Reach Sink (%02d, %02d)\n", x_cur, y_cur);
+				break;
 			}
 
-			int newPointID = getID(newPoint);
-			float newG = costG[curPointID] + grid_->getCost(curPoint, newPoint);
+      const std::vector<int> neighbors = getNeighbors( v_cur, isExplored );
+  
+      for(auto v_new : neighbors)
+      {
+  			int x_new, y_new;
+  			id2loc(v_new, x_new, y_new);
+  			float newCost = cost[v_cur] + grid_->getCost(x_cur, y_cur, x_new, y_new);
+  
+  			printf("                (%02d, %02d)\n", x_new, y_new);
+  			if(newCost < cost[v_new])
+  			{
+  			  cost[v_new] = newCost;
+  				prev[v_new] = v_cur;
+  			}
+      }
+    }
 
-			printf("\n");
-			printf("  See  (%02d, %02d)\n", newPoint.x, newPoint.y);
-			//printf("  newG = %f + %f\n", costG[curPointID], grid_->getCost(curPoint, newPoint));
-			//printf("  oldG = %f\n", costG[newPointID]);
-			//printf("  curPoint = (%d, %d)\n", curPoint.x, curPoint.y);
-			//printf("  newPoint = (%d, %d)\n", newPoint.x, newPoint.y);
-
-			if(newG < costG[newPointID])
-			{
-				cameFrom[newPointID] = curPointID;
-				float newH = grid_->getHeuristicCost(newPoint);
-				costG[newPointID] = newG;
-				costF[newPointID] = newG + newH;
-
-				if(!ifExist(newPoint))
-				{
-					printf("  Push (%02d, %02d) newG : %f newH : %f newF : %f\n", newPoint.x, newPoint.y, newG, newH, newG + newH);
-					openSet_.insert(newPoint);
-				}
-			}
-		}
-
-		iter += 1;
+		numPinToRoute--;
 	}
 
 	std::vector<Point> path;
-
-	int pathID = getIDbyXY(xT_, yT_);
-
-	for(auto& kv : cameFrom)
+	for(auto sink : grid_->sink())
 	{
-		path.push_back( Point(pathID % w_, pathID / w_) );
-		pathID = cameFrom[pathID];
+	  int x_tracing, y_tracing;
+  	int v_tracing = loc2id(sink.x, sink.y);
+  	while( v_tracing != srcIdx )
+  	{
+  		id2loc(v_tracing, x_tracing, y_tracing);
+  		printf("Path (%d, %d)\n", x_tracing, y_tracing);
+  		path.push_back( Point( x_tracing, y_tracing ) );
+  		v_tracing = prev[v_tracing];
+  	}
 	}
 
-	return path;
+  return path;
 }
 
 int main(int argc, char* argv[]) 
@@ -190,30 +185,49 @@ int main(int argc, char* argv[])
   int width  = 32;
   int height = 32;
 
-  int startX = 0;
-  int startY = 0;
+  Point source(0, 0);
+  Point sink1(width - 1, height - 1);
+  Point sink2(19       , height - 1);
+	Point sink3( 5, 28 );
 
-  int endX = width - 1;
-  int endY = height - 1;
+  std::vector<Point> sink;
+  sink.push_back(sink1);
+  sink.push_back(sink2);
+  sink.push_back(sink3);
 
-	Point start(startX, startY);
-	Point end(endX, endY);
+	sink.push_back( Point(width - 1, 10) );
+	sink.push_back( Point(width - 1, 15) );
+	sink.push_back( Point(10, 21) );
 
-  Grid grid(width, height, start, end);
-	std::vector<Point> block;
-	block.push_back( Point(0, 3) );
-	block.push_back( Point(1, 7) );
+  Grid grid(width, height, source, sink);
 
-	for(auto& pt : block)
-		grid.addBlock(pt);
+  std::vector<Point> block;
+  for(int i = 20; i < width; i++)
+  {
+    for(int j = 11; j < 15; j++)
+      block.push_back( Point(i, j) );
+  }
 
-	AStar algo(&grid);
-	auto path = algo.run();
+  for(int i = 15; i < width; i++)
+    block.push_back( Point(i, 20) );
+
+  for(int i = 0; i < 10; i++)
+    block.push_back( Point(i, 10) );
+
+  for(auto& pt : block)
+    grid.addBlock(pt);
+
+  Dijkstra algo( &grid );
+
+  auto path = algo.run();
 
   QApplication app(argc, argv);
   Painter vis(&app, &grid);
-	vis.highlightPath(path);
-	vis.highlightBlock(block);
+
+  vis.setPath(path);
+  vis.setSource(source);
+  vis.setSink(sink);
+  vis.setBlock(block);
   vis.openWindow();
 
   return 0;
