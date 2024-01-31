@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.1)
 
-project(AStar VERSION 1 LANGUAGES CXX)
+project(Dijkstra VERSION 1 LANGUAGES CXX)
 
 #set(CMAKE_FIND_DEBUG_MODE TRUE)
 find_package(Qt5 COMPONENTS Core Widgets)
