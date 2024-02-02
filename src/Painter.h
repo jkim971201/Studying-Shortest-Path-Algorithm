@@ -18,50 +18,50 @@ class GCell
 {
   public: 
   
-		GCell() {}
+    GCell() {}
 
     GCell(int lx, int ly, int w, int h)
       : lx_       (lx),
         ly_       (ly),
         w_        ( w),
         h_        ( h),
-				isPath_   (false),
-				isBlock_  (false),
-				isSource_ (false),
-				isSink_   (false)
+        isPath_   (false),
+        isBlock_  (false),
+        isSource_ (false),
+        isSink_   (false)
     {
-			rect_ = QRectF(lx, ly, w, h); 
-		}
+      rect_ = QRectF(lx, ly, w, h); 
+    }
 
-		void setPath()   { isPath_   = true; }
-		void setBlock()  { isBlock_  = true; }
-		void setSource() { isSource_ = true; }
-		void setSink()   { isSink_   = true; }
+    void setPath()   { isPath_   = true; }
+    void setBlock()  { isBlock_  = true; }
+    void setSource() { isSource_ = true; }
+    void setSink()   { isSink_   = true; }
 
     // Getters
     const QRectF& rect() const { return rect_; }
 
-		int lx() const { return lx_;    }
-		int ly() const { return lx_;    }
-		int  w() const { return w_;     }
-		int  h() const { return h_;     }
+    int lx() const { return lx_;    }
+    int ly() const { return lx_;    }
+    int  w() const { return w_;     }
+    int  h() const { return h_;     }
 
-		bool isPath()   const { return isPath_;   }
-		bool isBlock()  const { return isBlock_;  }
-		bool isSource() const { return isSource_; }
-		bool isSink()   const { return isSink_;   }
+    bool isPath()   const { return isPath_;   }
+    bool isBlock()  const { return isBlock_;  }
+    bool isSource() const { return isSource_; }
+    bool isSink()   const { return isSink_;   }
 
   private:
 
-		int lx_;
-		int ly_;
-		int w_;
-		int h_;
+    int lx_;
+    int ly_;
+    int w_;
+    int h_;
 
-		bool isPath_;
-		bool isBlock_;
-		bool isSource_;
-		bool isSink_;
+    bool isPath_;
+    bool isBlock_;
+    bool isSource_;
+    bool isSink_;
 
     QRectF rect_;
 };
@@ -77,10 +77,10 @@ class Painter : public QWidget
 
     // APIs
     void openWindow();
-		void setPath   (const std::vector<Point>& path);
-		void setBlock  (const std::vector<Point>& block);
-		void setSink   (const std::vector<Point>& sink);
-		void setSource (const Point& src);
+    void setPath   (const std::vector<Point>& path);
+    void setBlock  (const std::vector<Point>& block);
+    void setSink   (const std::vector<Point>& sink);
+    void setSource (const Point& src);
 
     // Setters
     void setRectFillColor(QColor color) { rectFillColor_ = color; }

@@ -37,17 +37,17 @@ class Grid
 
     void addBlock(Point p)      { block_.push_back(p);             }
     void addBlock(int x, int y) { block_.push_back( Point(x, y) ); }
-		
-		bool isBlock(int x, int y) const
-		{ 
-			for(auto blk : block_)
-			{
-				if(x == blk.x && y == blk.y)
-					return true;
-			}
-			return false;
-		}
-	
+    
+    bool isBlock(int x, int y) const
+    { 
+      for(auto blk : block_)
+      {
+        if(x == blk.x && y == blk.y)
+          return true;
+      }
+      return false;
+    }
+  
 
     int width()  const { return width_;  }
     int height() const { return height_; }
